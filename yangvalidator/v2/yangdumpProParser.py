@@ -19,6 +19,7 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 
 import logging
 import os
+from time import perf_counter
 import typing as t
 from datetime import datetime, timezone
 from subprocess import CalledProcessError, call, check_output
@@ -60,8 +61,10 @@ class YangdumpProParser:
         yangdump_res: t.Dict[str, t.Union[str, int]] = {'time': datetime.now(timezone.utc).isoformat()}
         ypoutfp = open(self.__yangdump_outfile, 'w+')
         ypresfp = open(self.__yangdump_resfile, 'w+')
-
+        
+        t0 = perf_counter()
         status = call(self.__yangdump_command, stdout=ypoutfp, stderr=ypresfp)
+        td = perf_counter()-t0
 
         yangdump_output = yangdump_stderr = ''
         if os.path.isfile(self.__yangdump_outfile):
@@ -85,4 +88,5 @@ class YangdumpProParser:
         yangdump_res['version'] = self.VERSION
         yangdump_res['code'] = status
         yangdump_res['command'] = ' '.join(self.__yangdump_command)
+        yangdump_res['validation_time'] = td
         return yangdump_res

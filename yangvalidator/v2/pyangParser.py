@@ -21,6 +21,7 @@ import glob
 import io
 import logging
 import os
+from time import perf_counter
 import typing as t
 from datetime import datetime, timezone
 
@@ -77,7 +78,10 @@ class PyangParser:
                 self.LOG.info('no module provided')
             self.__ctx.add_module(self.__infile, module)
 
+        t0 = perf_counter()
         self.__ctx.validate()
+        td = perf_counter()-t0
+
         pyang_stderr, pyang_output = self.__print_pyang_output()
         dirname = os.path.dirname(self.__working_directory)
 
@@ -87,6 +91,7 @@ class PyangParser:
         pyang_res['version'] = self.VERSION
         pyang_res['code'] = 0 if not pyang_stderr else 1
         pyang_res['command'] = ' '.join(self.__pyang_command)
+        pyang_res['validation_time'] = td
         restore_statements()
         del self.__ctx
         return pyang_res

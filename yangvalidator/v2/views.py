@@ -26,6 +26,8 @@ import pwd
 import random
 import shutil
 import string
+
+from time import perf_counter
 import typing as t
 from zipfile import ZipFile
 
@@ -41,6 +43,7 @@ from yangvalidator.v2.pyangParser import PyangParser
 from yangvalidator.v2.xymParser import XymParser
 from yangvalidator.v2.yangdumpProParser import YangdumpProParser
 from yangvalidator.v2.yanglintParser import YanglintParser
+from yangvalidator.v2.lyvParser import LyvParser
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +73,7 @@ def validate(request: WSGIRequest, xym_result=None, json_body=None):
     Validate yang module using 4 different validators. Yanglint, Pyang, Confdc, Yumadump-pro.
     Check if they are valid modules according to these validators and if not return problems that
     occurred while validating by each parser.
+
     :param json_body: json body sent from other function
     :param request: request sent from user
     :return: HTTP response with validated yang modules
@@ -159,8 +163,13 @@ def validate(request: WSGIRequest, xym_result=None, json_body=None):
                 (ConfdParser, 'confd'),
                 (YanglintParser, 'yanglint'),
                 (YangdumpProParser, 'yangdump-pro'),
+                (LyvParser, 'lighty-yang-validator'),
             ):
+                t0 = perf_counter()
                 parser_results = parser([working_dir], module_to_validate, working_dir).parse_module()
+                t1 = perf_counter()
+                parser_results['total_time'] = round((t1-t0)*1000, 2)
+                parser_results['validation_time'] = round(parser_results['validation_time']*1000, 2)
                 results[module_to_validate][name] = parser_results
     except Exception as e:
         results['error'] = f'Failed to parse a document - {e}'
@@ -449,6 +458,7 @@ def versions(request: WSGIRequest):
             'xym-version': XymParser.VERSION,
             'yangdump-version': YangdumpProParser.VERSION,
             'yanglint-version': YanglintParser.VERSION,
+            'lighty-yang-validator-version': LyvParser.VERSION,
         },
     )
 
@@ -465,6 +475,7 @@ def swagger(request: WSGIRequest):
 def try_validate_and_load_data(request: WSGIRequest):
     """
     Check if request is POST and try to parse byte string to json format
+
     :param request: request sent from user
     :return: Parsed json string
     """
@@ -476,6 +487,7 @@ def try_validate_and_load_data(request: WSGIRequest):
 def create_random_suffix() -> str:
     """
     Create random suffix to create new temp directory
+    
     :return: suffix of random 8 letters
     """
     letters = string.ascii_letters

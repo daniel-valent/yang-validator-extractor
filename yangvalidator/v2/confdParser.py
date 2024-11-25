@@ -19,6 +19,7 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 
 import logging
 import os
+from time import perf_counter
 import typing as t
 from datetime import datetime, timezone
 from subprocess import CalledProcessError, call, check_output
@@ -53,8 +54,10 @@ class ConfdParser:
         outfp = open(self.__confdc_outfile, 'w+')
         cresfp = open(self.__confdc_resfile, 'w+')
 
-        self.LOG.info(f'Starting to confd parse use command {" ".join(self.__confdc_command)}')
+        self.LOG.info(f'Starting confd parse using command {" ".join(self.__confdc_command)}')
+        t0 = perf_counter()
         status = call(self.__confdc_command, stdout=outfp, stderr=cresfp)
+        td = perf_counter()-t0
 
         confdc_output = confdc_stderr = ''
         if os.path.isfile(self.__confdc_outfile):
@@ -76,5 +79,6 @@ class ConfdParser:
         confdc_res['version'] = self.VERSION
         confdc_res['code'] = status
         confdc_res['command'] = ' '.join(self.__confdc_command)
+        confdc_res['validation_time'] = td
 
         return confdc_res

@@ -19,6 +19,7 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 
 import logging
 import os
+from time import perf_counter
 import typing as t
 from datetime import datetime, timezone
 from subprocess import CalledProcessError, call, check_output
@@ -51,7 +52,11 @@ class YanglintParser:
 
         yresfp = open(self.__yanglint_resfile, 'w+')
         outfp = open(self.__yanglint_outfile, 'w+')
+
+        t0 = perf_counter()
         status = call(self.__yanglint_cmd, stdout=outfp, stderr=yresfp)
+        td = perf_counter()-t0
+        
         self.LOG.info(f'Starting to yanglint parse use command {" ".join(self.__yanglint_cmd)}')
         yanglint_output = yanglint_stderr = ''
         if os.path.isfile(self.__yanglint_outfile):
@@ -74,5 +79,6 @@ class YanglintParser:
         yanglint_res['version'] = self.VERSION
         yanglint_res['code'] = status
         yanglint_res['command'] = ' '.join(self.__yanglint_cmd)
+        yanglint_res['validation_time'] = td
 
         return yanglint_res

@@ -21,6 +21,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from io import StringIO
+from time import perf_counter
 
 from xym import __version__ as xym_version
 from xym import xym
@@ -44,6 +45,7 @@ class XymParser:
         self.__source = source
 
     def parse_and_extract(self):
+        t0 = perf_counter()
         extracted_models = xym.xym(
             source_id=self.__source,
             dstdir=self.__working_directory,
@@ -53,6 +55,8 @@ class XymParser:
             debug_level=0,
             force_revision_regexp=True,
         )
+        td = perf_counter()-t0
+
         xym_res = {'time': datetime.now(timezone.utc).isoformat()}
         sys.stderr = self.__stderr_
         sys.stdout = self.__stdout_
@@ -65,4 +69,5 @@ class XymParser:
             f'xym.xym(source_id="{self.__source}", dstdir="{self.__working_directory}", srcdir="", '
             'strict=True, strict_examples=False, debug_level=0, force_revision_regexp=True)'
         )
+        xym_res['validation_time'] = td
         return extracted_models, xym_res
